@@ -1,5 +1,6 @@
 class Nota:
-    def __init__(self, oitava, volume, duracao, acidente):
+    def __init__(self, nome, oitava, volume, duracao, acidente):
+        self.nome = nome
         self.oitava = oitava
         self.volume = volume
         self.duracao = duracao
@@ -10,9 +11,10 @@ class Evento:
         self.estado = estado
 
 class EstadoVoz:
-    def __init__(self, volume_atual, oitava_base, instrumento_atual):
+
+    def __init__(self, oitava_atual, volume_atual, instrumento_atual):
+        self.oitava = oitava_atual
         self.volume = volume_atual
-        self.oitava = oitava_base
         self.instrumento = instrumento_atual
 
 class EstadoGlobal:  #Armazena dados globais da partitura

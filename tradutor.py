@@ -1,5 +1,5 @@
 import re
-from modelos import EstadoVoz, Partitura
+from modelos import EstadoVoz, Partitura, Nota, Evento
 
 class Tradutor:
     def __init__(self):
@@ -21,23 +21,38 @@ class Tradutor:
         return Partitura(vozes_processadas)
 
 
-    def _processar_linha(self, linha, voz):
+    def _processar_linha(self, linha, id_voz):
         if not linha.strip():
             return None # Ignorar linhas em branco
 
         atraso = self._extrair_atraso(linha)
         linha_limpa = re.sub(r'^\[\d+\]\s*', '', linha) # Remove a expressão de atraso ([n]) da linha
 
-        estado_voz = EstadoVoz(volume_atual=self._volumes_padrao[voz], oitava_base=self._oitavas_padrao[voz], instrumento_atual=self._instrumentos_padrao[voz])
+        estado_atual = EstadoVoz(self._oitavas_padrao[id_voz], self._volumes_padrao[id_voz], self._instrumentos_padrao[id_voz])
 
-        indice = 0
-        while indice < len(linha_limpa):
-            char_atual = linha_limpa[indice]
-                #Lógica de decisão:
-                #   Se char_atual for A-G...
+        elementos_musicais = []
+
+        for i in range(len(linha_limpa)):
+            char_atual = linha_limpa[i]
+
+            #Lógica de decisão:
+            match char_atual:
+
+                case 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B':
+                    match_nota = re.match(r'[A-G]([#b]?):(\d+)', linha_limpa[i:])
+
+                    if match_nota:
+                        acidente = match_nota.group(1)
+                        duracao = int(match_nota.group(2))
+
+                        nova_nota = Nota(char_atual, estado_atual.oitava, estado_atual.volume, duracao, acidente)
+                        elementos_musicais.append(nova_nota)
+
+                        i += match_nota.end() - 1
+
                 #   Se char_atual for '>' ou '<'...
-            
-            indice += 1
+                case '>', '<':
+                    pass   
 
         #return objeto Voz com as notas e eventos processados para esta linha
 
@@ -47,3 +62,4 @@ class Tradutor:
         if match:
             return int(match.group(1))
         return 0
+    
