@@ -1,7 +1,10 @@
 import re
-from modelos import EstadoVoz, Partitura, Nota, Evento
+from modelos import EstadoVoz, Partitura, Nota, Evento, Voz
 
 class Tradutor:
+
+    TEMPO_PADRAO_PAUSA = 3
+
     def __init__(self):
         self._oitavas_padrao = [6, 5, 4, 3]
         self._volumes_padrao = [100, 80, 60, 40]
@@ -48,13 +51,66 @@ class Tradutor:
                         nova_nota = Nota(char_atual, estado_atual.oitava, estado_atual.volume, duracao, acidente)
                         elementos_musicais.append(nova_nota)
 
+                        estado_atual.ultima_nota = nova_nota
                         i += match_nota.end() - 1
 
-                #   Se char_atual for '>' ou '<'...
-                case '>', '<':
-                    pass   
 
-        #return objeto Voz com as notas e eventos processados para esta linha
+                case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
+                    comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
+                    elementos_musicais.append(comando)
+
+
+                case ' ':
+                    estado_atual.dobrar_volume()
+
+
+                case '!':
+                    self._trocar_instrumento(24, estado_atual, elementos_musicais)
+
+                    
+                case c if c.isdigit() and int(c) % 2 == 0:
+                    self._trocar_instrumento(estado_atual.instrumento + int(c), estado_atual, elementos_musicais)
+
+
+                case '?' | '.':
+                    nova_oitava = estado_atual.oitava + 1
+
+                    if nova_oitava > 9:
+                        estado_atual.oitava = self._oitavas_padrao[id_voz]
+
+                    else:
+                        estado_atual.oitava = nova_oitava
+
+
+                case c if c % 2 != 0 | ';':
+                    self._trocar_instrumento(15, estado_atual, elementos_musicais)
+
+
+                case ',':
+                    self._trocar_instrumento(114, estado_atual, elementos_musicais)
+                
+
+                case '>':
+                    comando = Evento('alterar_bpm', 10)
+                    elementos_musicais.append(comando)
+
+
+                case '<':
+                    comando = Evento('alterar_bpm', -10)
+                    elementos_musicais.append(comando)
+
+
+                case _:
+                    if estado_atual.ultima_nota is not None:
+                        nota_repetida = Nota(estado_atual.ultima_nota.nome, estado_atual.ultima_nota.oitava, estado_atual.ultima_nota.volume, estado_atual.ultima_nota.duracao, estado_atual.ultima_nota.acidente)
+                        elementos_musicais.append(nota_repetida)
+                        
+                    else:
+                        comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
+                        elementos_musicais.append(comando)
+
+
+        return Voz(elementos_musicais)
 
 
     def _extrair_atraso(self, linha):
@@ -62,4 +118,12 @@ class Tradutor:
         if match:
             return int(match.group(1))
         return 0
-    
+
+
+    def _trocar_instrumento(self, valor, estado_atual, lista_elementos):
+        novo_instrumento = valor
+
+        estado_atual.instrumento = valor
+
+        comando = Evento('troca_instrumento', valor)
+        lista_elementos.append(comando)
