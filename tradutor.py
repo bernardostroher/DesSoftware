@@ -9,6 +9,7 @@ class Tradutor:
         self._oitavas_padrao = [6, 5, 4, 3]
         self._volumes_padrao = [100, 80, 60, 40]
         self._instrumentos_padrao = [6, 20, 0, 70] #Cravo, Órgão, Piano, Fagote
+        self._bpm_inicial = 120
 
 
     def analisar(self, texto):
@@ -34,8 +35,15 @@ class Tradutor:
         estado_atual = EstadoVoz(self._oitavas_padrao[id_voz], self._volumes_padrao[id_voz], self._instrumentos_padrao[id_voz])
 
         elementos_musicais = []
+        elementos_musicais.append(Evento('troca_instrumento', estado_atual.instrumento))
+        
+        if id_voz == 0:
+            elementos_musicais.append(Evento('definir_bpm', self._bpm_inicial))
+        if atraso > 0:
+            elementos_musicais.append(Evento('atraso', atraso))
 
-        for i in range(len(linha_limpa)):
+        i = 0
+        while i < len(linha_limpa):
             char_atual = linha_limpa[i]
 
             #Lógica de decisão:
@@ -52,7 +60,8 @@ class Tradutor:
                         elementos_musicais.append(nova_nota)
 
                         estado_atual.ultima_nota = nova_nota
-                        i += match_nota.end() - 1
+                        i += match_nota.end()
+                        continue
 
 
                 case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
@@ -82,7 +91,7 @@ class Tradutor:
                         estado_atual.oitava = nova_oitava
 
 
-                case c if c % 2 != 0 | ';':
+                case c if (c.isdigit() and int(c) % 2 != 0) or c == ';':
                     self._trocar_instrumento(15, estado_atual, elementos_musicais)
 
 
@@ -109,6 +118,7 @@ class Tradutor:
                         comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
                         elementos_musicais.append(comando)
 
+            i += 1
 
         return Voz(elementos_musicais)
 
