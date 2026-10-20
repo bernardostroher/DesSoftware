@@ -14,7 +14,7 @@ class Tela:
     def __init__(self):
         self.clicado = False# para botoes
         self.pausado = False#para selecionar arquivo
-
+        self.carregado = False
     def abrir_tela(self):
         pygame.init()
         tamanho_monitor = pygame.display.get_desktop_sizes()[0]
@@ -35,9 +35,15 @@ class Tela:
                 documento = gerenciador.ler_arquivo_txt()
                 partitura = traduzido.analisar(documento)
                 gerador.cria_midi(partitura, "testemidi.mid")
-
-            if acao == "Play":#configurar para so apos anterior estar feito
+                self.carregado = True
+            if acao == "Play" and self.carregado == True and self.pausado == False:#configurar para so apos anterior estar feito
                 toca.tocar("testemidi.mid")
+            if acao == "Pause" and self.pausado == False:
+                toca.pausar()
+                self.pausado = True
+            if acao == "Play" and self.pausado == True:
+                toca.despausar()
+                self.pausado = False
             #pausar continuar e parar     
                
         pygame.quit()

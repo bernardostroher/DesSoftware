@@ -11,14 +11,13 @@ class ReprodutorAudio:
         pygame.mixer.init()
         pygame.mixer.music.load(arquivo)
         pygame.mixer.music.play()
-        time.sleep(10)
 
     def pausar(self):
-        print("pausar")
+        
         pygame.mixer.music.pause()
 
     def despausar(self):
-        print("despausar")
+        
         pygame.mixer.music.unpause()
 
 
