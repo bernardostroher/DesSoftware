@@ -5,9 +5,16 @@ Integrantes: Bernardo Atkinson Stroher e Matias Lagemann
 
 Bibliotecas:<br>
   `mido` - para montar o arquivo MIDI<br>
-  `python-rtmidi` - para tocar a música em tempo real ao executar o código
+  `pygame-ce` - para tocar a música em tempo real e para desenvolver a interface do programa<br>
+  `pygame_gui` - para recursos de interface extras
 
   Para baixar as bibliotecas (terminal do vscode):
   ```bash
-  pip install mido python-rtmidi
+  pip install mido
+  ```
+  ```bash
+  pip install pygame-ce
+  ```
+  ```bash
+  pip install pygame_gui
   ```

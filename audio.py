@@ -11,6 +11,9 @@ class ReprodutorAudio:
         pygame.mixer.init()
         pygame.mixer.music.load(arquivo)
         pygame.mixer.music.play()
+ 
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
 
     def pausar(self):
         
@@ -39,8 +42,6 @@ class GeradorMidi:
         except KeyError:
             raise ValueError(f"Código de duração inválido: {codigo}") from None
 
-    #def __init__(self):
-        #self.mid = None
 
     def _coletar_eventos_bpm(self, partitura):
         voz_controle = partitura.vozes[0]
@@ -161,9 +162,6 @@ class GeradorMidi:
 
                     case "troca_instrumento":
                         track.append(Message('program_change', program = valor, time = 0, channel = canal))
-                    
-                    #case "alterar_bpm":
-                    #   set_tempo = bpm2tempo(valor)
 
                     case "pausa":
                         track.append(Message('note_off', note = 0, velocity = 0, time = self._duracao_em_ticks(valor), channel = canal))

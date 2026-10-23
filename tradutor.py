@@ -29,8 +29,15 @@ class Tradutor:
         if not linha.strip():
             return None # Ignorar linhas em branco
 
-        atraso = self._extrair_atraso(linha)
-        linha_limpa = re.sub(r'^\[\d+\]\s*', '', linha) # Remove a expressão de atraso ([n]) da linha
+        prefixo_atraso = re.match(r'^([<>,]*)\[(\d+)\]\s*', linha)
+        if prefixo_atraso:
+            comandos_iniciais = prefixo_atraso.group(1)
+            atraso = int(prefixo_atraso.group(2))
+            linha_limpa = linha[prefixo_atraso.end():]
+        else:
+            comandos_iniciais = ''
+            atraso = 0
+            linha_limpa = linha
 
         estado_atual = EstadoVoz(self._oitavas_padrao[id_voz], self._volumes_padrao[id_voz], self._instrumentos_padrao[id_voz])
 
@@ -39,6 +46,13 @@ class Tradutor:
         
         if id_voz == 0:
             elementos_musicais.append(Evento('definir_bpm', self._bpm_inicial))
+
+        for comando in comandos_iniciais:
+            if comando == '<':
+                elementos_musicais.append(Evento('alterar_bpm', -10))
+            elif comando == '>':
+                elementos_musicais.append(Evento('alterar_bpm', 10))
+
         if atraso > 0:
             elementos_musicais.append(Evento('atraso', atraso))
 
@@ -65,9 +79,27 @@ class Tradutor:
 
 
                 case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
-                    comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
-                    elementos_musicais.append(comando)
+                    match_pausa = re.match(r'[c-g]:(\d+)', linha_limpa[i:])
 
+                    if match_pausa:
+                        duracao = int(match_pausa.group(1))
+                        comando = Evento('pausa', duracao)
+                        elementos_musicais.append(comando)
+                        i += match_pausa.end()
+                        continue
+                    else:
+                        comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
+                        elementos_musicais.append(comando)
+
+
+                case 'i':
+                    match_inst = re.match(r'i:(\d+)', linha_limpa[i:])
+
+                    if match_inst:
+                        novo_instrumento = int(match_inst.group(1))
+                        self._trocar_instrumento(novo_instrumento, estado_atual, elementos_musicais)
+                        i += match_inst.end()
+                        continue
 
                 case ' ':
                     estado_atual.dobrar_volume()
@@ -85,6 +117,15 @@ class Tradutor:
                     nova_oitava = estado_atual.oitava + 1
 
                     if nova_oitava > 9:
+                        estado_atual.oitava = self._oitavas_padrao[id_voz]
+
+                    else:
+                        estado_atual.oitava = nova_oitava
+
+                case 'V':
+                    nova_oitava = estado_atual.oitava - 1
+
+                    if nova_oitava < 0:
                         estado_atual.oitava = self._oitavas_padrao[id_voz]
 
                     else:
@@ -121,13 +162,6 @@ class Tradutor:
             i += 1
 
         return Voz(elementos_musicais)
-
-
-    def _extrair_atraso(self, linha):
-        match = re.match(r'^\[(\d+)\]', linha)
-        if match:
-            return int(match.group(1))
-        return 0
 
 
     def _trocar_instrumento(self, valor, estado_atual, lista_elementos):

@@ -20,3 +20,20 @@ class GerenciadorArquivos:     #Classse para exibir opções ao usuário, ler o 
             conteudo = arquivo.read()
 
         return conteudo
+
+    def salvar_arquivo_txt(self, conteudo):
+        root = tk.Tk()
+        root.withdraw()
+        caminho = filedialog.asksaveasfilename(title = "Salvar Texto Como", defaultextension = ".txt", filetypes = [("Arquivo de Texto", "*.txt"), ("Todos os Arquivos", "*.*")])
+
+        if caminho:
+            with open(caminho, 'w', encoding = 'utf-8') as arquivo:
+                arquivo.write(conteudo)
+
+    def escolher_caminho_salvar(self):
+        
+        root = tk.Tk()
+        root.withdraw()
+        caminho = filedialog.asksaveasfilename(title = "Salvar Música Como", defaultextension = ".mid", filetypes = [("Arquivo MIDI", "*.mid")])
+
+        return caminho
