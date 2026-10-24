@@ -8,12 +8,7 @@ class ReprodutorAudio:
         pass
 
     def tocar(self, arquivo):
-        pygame.mixer.init()
-        pygame.mixer.music.load(arquivo)
         pygame.mixer.music.play()
- 
-        while pygame.mixer.music.get_busy():
-            time.sleep(0.1)
 
     def pausar(self):
         

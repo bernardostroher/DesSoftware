@@ -38,6 +38,8 @@ class Tela:
 
         self._carregar_texturas()
 
+        pygame.mixer.init()
+
         running = True
         while running:
 
@@ -49,7 +51,7 @@ class Tela:
                     running = False
                 gerenciador_gui.process_events(event)
 
-            screen.fill((255, 255, 255))#alterar usando image load... para uma imagem
+            screen.fill((255, 255, 255)) #alterar usando image load... para uma imagem
             botoes = self._cria_botoes(screen, tamanho_monitor)
             acao = conferirir_mouse = self._mouse( screen, botoes, font)
 
@@ -65,14 +67,14 @@ class Tela:
                     caixa_texto.set_text(documento)
                     self.carregado = True
 
-            if acao == "Play" and self.carregado == True and self.pausado == False:#configurar para so apos anterior estar feito
-                texto_atualizado = caixa_texto.get_text()
-                partitura = traduzido.analisar(texto_atualizado)
+                    partitura = traduzido.analisar(documento)
+                    gerador.cria_midi(partitura, ".temp_audio.mid")
+                    pygame.mixer.music.load(".temp_audio.mid")
 
-                gerador.cria_midi(partitura, ".temp_audio.mid")
+            if acao == "Play" and self.carregado == True and self.pausado == False: #configurar para so apos anterior estar feito
                 toca.tocar(".temp_audio.mid")
                 
-            if acao == "Pause" and self.pausado == False:
+            if acao == "Pause" and self.pausado == False and pygame.mixer.get_init() and pygame.mixer.music.get_busy():
                 toca.pausar()
                 self.pausado = True
 

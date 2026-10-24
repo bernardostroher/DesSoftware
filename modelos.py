@@ -22,6 +22,7 @@ class EstadoVoz:
         self.oitava = oitava_atual
         self.volume = volume_atual
         self.instrumento = instrumento_atual
+        self.ultima_nota = None
 
     def dobrar_volume(self):
         self.volume = min(self.volume * 2, self.VOLUME_MAX)

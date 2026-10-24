@@ -30,10 +30,12 @@ class Tradutor:
             return None # Ignorar linhas em branco
 
         prefixo_atraso = re.match(r'^([<>,]*)\[(\d+)\]\s*', linha)
+
         if prefixo_atraso:
             comandos_iniciais = prefixo_atraso.group(1)
             atraso = int(prefixo_atraso.group(2))
             linha_limpa = linha[prefixo_atraso.end():]
+
         else:
             comandos_iniciais = ''
             atraso = 0
@@ -60,106 +62,9 @@ class Tradutor:
         while i < len(linha_limpa):
             char_atual = linha_limpa[i]
 
-            #Lógica de decisão:
-            match char_atual:
+            consumidos = self._analisa_caractere(char_atual, elementos_musicais, estado_atual, i, linha_limpa, id_voz)
 
-                case 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B':
-                    match_nota = re.match(r'[A-G]([#b]?):(\d+)', linha_limpa[i:])
-
-                    if match_nota:
-                        acidente = match_nota.group(1)
-                        duracao = int(match_nota.group(2))
-
-                        nova_nota = Nota(char_atual, estado_atual.oitava, estado_atual.volume, duracao, acidente)
-                        elementos_musicais.append(nova_nota)
-
-                        estado_atual.ultima_nota = nova_nota
-                        i += match_nota.end()
-                        continue
-
-
-                case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
-                    match_pausa = re.match(r'[c-g]:(\d+)', linha_limpa[i:])
-
-                    if match_pausa:
-                        duracao = int(match_pausa.group(1))
-                        comando = Evento('pausa', duracao)
-                        elementos_musicais.append(comando)
-                        i += match_pausa.end()
-                        continue
-                    else:
-                        comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
-                        elementos_musicais.append(comando)
-
-
-                case 'i':
-                    match_inst = re.match(r'i:(\d+)', linha_limpa[i:])
-
-                    if match_inst:
-                        novo_instrumento = int(match_inst.group(1))
-                        self._trocar_instrumento(novo_instrumento, estado_atual, elementos_musicais)
-                        i += match_inst.end()
-                        continue
-
-                case ' ':
-                    estado_atual.dobrar_volume()
-
-
-                case '!':
-                    self._trocar_instrumento(24, estado_atual, elementos_musicais)
-
-                    
-                case c if c.isdigit() and int(c) % 2 == 0:
-                    self._trocar_instrumento(estado_atual.instrumento + int(c), estado_atual, elementos_musicais)
-
-
-                case '?' | '.':
-                    nova_oitava = estado_atual.oitava + 1
-
-                    if nova_oitava > 9:
-                        estado_atual.oitava = self._oitavas_padrao[id_voz]
-
-                    else:
-                        estado_atual.oitava = nova_oitava
-
-                case 'V':
-                    nova_oitava = estado_atual.oitava - 1
-
-                    if nova_oitava < 0:
-                        estado_atual.oitava = self._oitavas_padrao[id_voz]
-
-                    else:
-                        estado_atual.oitava = nova_oitava
-
-
-                case c if (c.isdigit() and int(c) % 2 != 0) or c == ';':
-                    self._trocar_instrumento(15, estado_atual, elementos_musicais)
-
-
-                case ',':
-                    self._trocar_instrumento(114, estado_atual, elementos_musicais)
-                
-
-                case '>':
-                    comando = Evento('alterar_bpm', 10)
-                    elementos_musicais.append(comando)
-
-
-                case '<':
-                    comando = Evento('alterar_bpm', -10)
-                    elementos_musicais.append(comando)
-
-
-                case _:
-                    if estado_atual.ultima_nota is not None:
-                        nota_repetida = Nota(estado_atual.ultima_nota.nome, estado_atual.ultima_nota.oitava, estado_atual.ultima_nota.volume, estado_atual.ultima_nota.duracao, estado_atual.ultima_nota.acidente)
-                        elementos_musicais.append(nota_repetida)
-                        
-                    else:
-                        comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
-                        elementos_musicais.append(comando)
-
-            i += 1
+            i += consumidos
 
         return Voz(elementos_musicais)
 
@@ -171,3 +76,108 @@ class Tradutor:
 
         comando = Evento('troca_instrumento', valor)
         lista_elementos.append(comando)
+
+
+    def _analisa_caractere(self, char_atual, elementos_musicais, estado_atual, i, linha_limpa, id_voz):
+
+        index = i
+        i = 1
+
+        match char_atual:
+        
+            case 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B':
+                match_nota = re.match(r'[A-G]([#b]?):(\d+)', linha_limpa[index:])
+        
+                if match_nota:
+                    acidente = match_nota.group(1)
+                    duracao = int(match_nota.group(2))
+
+                    nova_nota = Nota(char_atual, estado_atual.oitava, estado_atual.volume, duracao, acidente)
+                    elementos_musicais.append(nova_nota)
+
+                    estado_atual.ultima_nota = nova_nota
+                    i = match_nota.end()
+    
+        
+            case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
+                match_pausa = re.match(r'[c-g]:(\d+)', linha_limpa[index:])
+
+                if match_pausa:
+                    duracao = int(match_pausa.group(1))
+                    comando = Evento('pausa', duracao)
+                    elementos_musicais.append(comando)
+                    i = match_pausa.end()
+                    
+                else:
+                    comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
+                    elementos_musicais.append(comando)
+
+
+            case 'i':
+                match_inst = re.match(r'i:(\d+)', linha_limpa[index:])
+
+                if match_inst:
+                    novo_instrumento = int(match_inst.group(1))
+                    self._trocar_instrumento(novo_instrumento, estado_atual, elementos_musicais)
+                    i = match_inst.end()
+                    
+
+            case ' ':
+                estado_atual.dobrar_volume()
+
+
+            case '!':
+                self._trocar_instrumento(24, estado_atual, elementos_musicais)
+
+                
+            case c if c.isdigit() and int(c) % 2 == 0:
+                self._trocar_instrumento(estado_atual.instrumento + int(c), estado_atual, elementos_musicais)
+
+
+            case '?' | '.':
+                nova_oitava = estado_atual.oitava + 1
+
+                if nova_oitava > 9:
+                    estado_atual.oitava = self._oitavas_padrao[id_voz]
+
+                else:
+                    estado_atual.oitava = nova_oitava
+
+            case 'V':
+                nova_oitava = estado_atual.oitava - 1
+
+                if nova_oitava < 0:
+                    estado_atual.oitava = self._oitavas_padrao[id_voz]
+
+                else:
+                    estado_atual.oitava = nova_oitava
+
+
+            case c if (c.isdigit() and int(c) % 2 != 0) or c == ';':
+                self._trocar_instrumento(15, estado_atual, elementos_musicais)
+
+
+            case ',':
+                self._trocar_instrumento(114, estado_atual, elementos_musicais)
+            
+
+            case '>':
+                comando = Evento('alterar_bpm', 10)
+                elementos_musicais.append(comando)
+
+
+            case '<':
+                comando = Evento('alterar_bpm', -10)
+                elementos_musicais.append(comando)
+
+
+            case _:
+                if estado_atual.ultima_nota is not None:
+                    nota_repetida = Nota(estado_atual.ultima_nota.nome, estado_atual.ultima_nota.oitava, estado_atual.ultima_nota.volume, estado_atual.ultima_nota.duracao, estado_atual.ultima_nota.acidente)
+                    elementos_musicais.append(nota_repetida)
+                    
+                else:
+                    comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
+                    elementos_musicais.append(comando)
+
+        return i
