@@ -11,13 +11,10 @@ class ReprodutorAudio:
         pygame.mixer.music.play()
 
     def pausar(self):
-        
         pygame.mixer.music.pause()
 
     def despausar(self):
-        
         pygame.mixer.music.unpause()
-
 
 class GeradorMidi:
 
@@ -36,7 +33,6 @@ class GeradorMidi:
             return self.DURACAO_EM_TICKS[codigo]
         except KeyError:
             raise ValueError(f"Código de duração inválido: {codigo}") from None
-
 
     def _coletar_eventos_bpm(self, partitura):
         voz_controle = partitura.vozes[0]
@@ -78,7 +74,6 @@ class GeradorMidi:
 
         return eventos_bpm
 
-
     def _cria_track_bpm(self, eventos_bpm):
 
         track = MidiTrack()
@@ -89,7 +84,6 @@ class GeradorMidi:
             delta_ticks = tick - tick_anterior
             track.append(MetaMessage('set_tempo', tempo = bpm2tempo(bpm), time = delta_ticks))
             tick_anterior = tick
-
 
     def _cria_nota(self, evento):
             tabela_notas = {
@@ -117,11 +111,9 @@ class GeradorMidi:
     
             return nota     
 
-
     def cria_arquivo_midi(self):
         self.mid = MidiFile(type = 1)
 
-        
     def cria_midi(self, texto_traduzido, nome):
         self.cria_arquivo_midi()
 
@@ -134,12 +126,9 @@ class GeradorMidi:
 
         self.salva_midi(nome)
 
-
     def cria_track(self, voz, canal = 0):
-        #mid = MidiFile('nome')
         track = MidiTrack()
         self.mid.tracks.append(track)
-
 
         for evento in voz.lista_elementos:
 
@@ -165,6 +154,5 @@ class GeradorMidi:
                         atraso_em_ticks = self._duracao_em_ticks(3) * valor
                         track.append(Message('note_off', note = 0, velocity = 0, time = atraso_em_ticks, channel = canal))
     
-
     def salva_midi(self, nome):
         self.mid.save(nome)

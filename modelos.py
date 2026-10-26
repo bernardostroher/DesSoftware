@@ -6,12 +6,10 @@ class Nota:
         self.duracao = duracao
         self.acidente = acidente
 
-
 class Evento:
     def __init__(self, tipo, valor):
         self.tipo = tipo
         self.valor = valor
-
 
 class EstadoVoz:
 
@@ -27,16 +25,9 @@ class EstadoVoz:
     def dobrar_volume(self):
         self.volume = min(self.volume * 2, self.VOLUME_MAX)
 
-
-class EstadoGlobal:  #Armazena dados globais da partitura
-    def __init__(self, bpm):
-        self.bpm = bpm
-
-
-class Voz:  #Armazena a sequência de notas e eventos de uma voz
+class Voz:
     def __init__(self, lista_elementos):
         self.lista_elementos = lista_elementos
-
 
 class Partitura:
     def __init__(self, vozes):

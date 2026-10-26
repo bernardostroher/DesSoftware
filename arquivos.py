@@ -1,25 +1,32 @@
 import tkinter as tk
 from tkinter import filedialog
 
-class GerenciadorArquivos:     #Classse para exibir opções ao usuário, ler o conteúdo de um arquivo txt, sobrescrever o conteúdo do arq txt se o usuário editar o texto, receber caminho e nome para salvar o midi.
+class GerenciadorArquivos:
 
-    def ler_arquivo_txt(self):
-        # Cria a janela raiz do Tkinter e a oculta imediatamente
+    def escolher_caminho_abrir(self):
         root = tk.Tk()
         root.withdraw()
 
-        # Abre a janela do explorador de arquivos
-        caminho_arquivo = filedialog.askopenfilename(title = "Selecione o arquivo de texto a ser interpretado", filetypes = [("Arquivos de Texto", "*.txt"), ("Todos os Arquivos", "*.*")])
+        try:
+            return filedialog.askopenfilename(
+                title="Selecione o arquivo de texto a ser interpretado",
+                filetypes=[
+                    ("Arquivos de Texto", "*.txt"),
+                    ("Todos os Arquivos", "*.*")
+                ]
+            ) or None
+        finally:
+            root.destroy()
 
-        # Verifica se o usuário selecionou um arquivo ou clicou em cancelar
+    def ler_conteudo_txt(self, caminho_arquivo):
+        with open(caminho_arquivo, 'r', encoding = 'utf-8') as arquivo:
+            return arquivo.read()
+
+    def ler_arquivo_txt(self):
+        caminho_arquivo = self.escolher_caminho_abrir()
         if not caminho_arquivo:
             return None
-
-        # Abre o arquivo
-        with open(caminho_arquivo, 'r', encoding = 'utf-8') as arquivo:
-            conteudo = arquivo.read()
-
-        return conteudo
+        return self.ler_conteudo_txt(caminho_arquivo)
 
     def salvar_arquivo_txt(self, conteudo):
         root = tk.Tk()
@@ -31,7 +38,6 @@ class GerenciadorArquivos:     #Classse para exibir opções ao usuário, ler o 
                 arquivo.write(conteudo)
 
     def escolher_caminho_salvar(self):
-        
         root = tk.Tk()
         root.withdraw()
         caminho = filedialog.asksaveasfilename(title = "Salvar Música Como", defaultextension = ".mid", filetypes = [("Arquivo MIDI", "*.mid")])

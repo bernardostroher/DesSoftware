@@ -8,9 +8,8 @@ class Tradutor:
     def __init__(self):
         self._oitavas_padrao = [6, 5, 4, 3]
         self._volumes_padrao = [100, 80, 60, 40]
-        self._instrumentos_padrao = [6, 20, 0, 70] #Cravo, Órgão, Piano, Fagote
+        self._instrumentos_padrao = [6, 20, 0, 70]
         self._bpm_inicial = 120
-
 
     def analisar(self, texto):
         linhas = texto.strip().splitlines()
@@ -18,16 +17,15 @@ class Tradutor:
         vozes_processadas = []
 
         for i, linha in enumerate(linhas):
-            id_voz = i % 4 # Alterna entre as quatro vozes (0, 1, 2, 3)
+            id_voz = i % 4
             voz = self._processar_linha(linha, id_voz)
             vozes_processadas.append(voz)
 
         return Partitura(vozes_processadas)
 
-
     def _processar_linha(self, linha, id_voz):
         if not linha.strip():
-            return None # Ignorar linhas em branco
+            return None
 
         prefixo_atraso = re.match(r'^([<>,]*)\[(\d+)\]\s*', linha)
 
@@ -68,15 +66,11 @@ class Tradutor:
 
         return Voz(elementos_musicais)
 
-
     def _trocar_instrumento(self, valor, estado_atual, lista_elementos):
-        novo_instrumento = valor
-
         estado_atual.instrumento = valor
 
         comando = Evento('troca_instrumento', valor)
         lista_elementos.append(comando)
-
 
     def _analisa_caractere(self, char_atual, elementos_musicais, estado_atual, i, linha_limpa, id_voz):
 
@@ -97,7 +91,6 @@ class Tradutor:
 
                     estado_atual.ultima_nota = nova_nota
                     i = match_nota.end()
-    
         
             case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
                 match_pausa = re.match(r'[c-g]:(\d+)', linha_limpa[index:])
@@ -112,7 +105,6 @@ class Tradutor:
                     comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
                     elementos_musicais.append(comando)
 
-
             case 'i':
                 match_inst = re.match(r'i:(\d+)', linha_limpa[index:])
 
@@ -120,19 +112,15 @@ class Tradutor:
                     novo_instrumento = int(match_inst.group(1))
                     self._trocar_instrumento(novo_instrumento, estado_atual, elementos_musicais)
                     i = match_inst.end()
-                    
 
             case ' ':
                 estado_atual.dobrar_volume()
 
-
             case '!':
                 self._trocar_instrumento(24, estado_atual, elementos_musicais)
-
                 
             case c if c.isdigit() and int(c) % 2 == 0:
                 self._trocar_instrumento(estado_atual.instrumento + int(c), estado_atual, elementos_musicais)
-
 
             case '?' | '.':
                 nova_oitava = estado_atual.oitava + 1
@@ -152,24 +140,19 @@ class Tradutor:
                 else:
                     estado_atual.oitava = nova_oitava
 
-
             case c if (c.isdigit() and int(c) % 2 != 0) or c == ';':
                 self._trocar_instrumento(15, estado_atual, elementos_musicais)
 
-
             case ',':
                 self._trocar_instrumento(114, estado_atual, elementos_musicais)
-            
 
             case '>':
                 comando = Evento('alterar_bpm', 10)
                 elementos_musicais.append(comando)
 
-
             case '<':
                 comando = Evento('alterar_bpm', -10)
                 elementos_musicais.append(comando)
-
 
             case _:
                 if estado_atual.ultima_nota is not None:
