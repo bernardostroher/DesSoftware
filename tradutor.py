@@ -43,7 +43,6 @@ class Tradutor:
 
         elementos_musicais = []
         elementos_musicais.append(Evento('troca_instrumento', estado_atual.instrumento))
-        
         if id_voz == 0:
             elementos_musicais.append(Evento('definir_bpm', self._bpm_inicial))
 
@@ -78,10 +77,8 @@ class Tradutor:
         i = 1
 
         match char_atual:
-        
             case 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B':
                 match_nota = re.match(r'[A-G]([#b]?):(\d+)', linha_limpa[index:])
-        
                 if match_nota:
                     acidente = match_nota.group(1)
                     duracao = int(match_nota.group(2))
@@ -91,7 +88,6 @@ class Tradutor:
 
                     estado_atual.ultima_nota = nova_nota
                     i = match_nota.end()
-        
             case 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b':
                 match_pausa = re.match(r'[c-g]:(\d+)', linha_limpa[index:])
 
@@ -100,7 +96,6 @@ class Tradutor:
                     comando = Evento('pausa', duracao)
                     elementos_musicais.append(comando)
                     i = match_pausa.end()
-                    
                 else:
                     comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
                     elementos_musicais.append(comando)
@@ -118,7 +113,7 @@ class Tradutor:
 
             case '!':
                 self._trocar_instrumento(24, estado_atual, elementos_musicais)
-                
+
             case c if c.isdigit() and int(c) % 2 == 0:
                 self._trocar_instrumento(estado_atual.instrumento + int(c), estado_atual, elementos_musicais)
 
@@ -158,7 +153,7 @@ class Tradutor:
                 if estado_atual.ultima_nota is not None:
                     nota_repetida = Nota(estado_atual.ultima_nota.nome, estado_atual.ultima_nota.oitava, estado_atual.ultima_nota.volume, estado_atual.ultima_nota.duracao, estado_atual.ultima_nota.acidente)
                     elementos_musicais.append(nota_repetida)
-                    
+
                 else:
                     comando = Evento('pausa', self.TEMPO_PADRAO_PAUSA)
                     elementos_musicais.append(comando)

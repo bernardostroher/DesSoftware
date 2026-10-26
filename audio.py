@@ -1,13 +1,13 @@
 import pygame
-import time
-import modelos
 from mido import MidiFile, MidiTrack, Message, MetaMessage, bpm2tempo
+import modelos
+
 
 class ReprodutorAudio:
     def __init__(self):
         pass
 
-    def tocar(self, arquivo):
+    def tocar(self):
         pygame.mixer.music.play()
 
     def pausar(self):
@@ -86,30 +86,30 @@ class GeradorMidi:
             tick_anterior = tick
 
     def _cria_nota(self, evento):
-            tabela_notas = {
-                "C": 0,
-                "D": 2,
-                "E": 4,
-                "F": 5,
-                "G": 7,
-                "A": 9,
-                "B": 11,
-            }
-    
-            oitava = evento.oitava
-            acidente = evento.acidente
-            nome = evento.nome
-            nota = tabela_notas[nome]
-    
-            if acidente == '#':
-                nota = nota + 1
-    
-            if acidente == 'b':
-                nota = nota - 1
-            
-            nota = nota + 12 * oitava
-    
-            return nota     
+        tabela_notas = {
+            "C": 0,
+            "D": 2,
+            "E": 4,
+            "F": 5,
+            "G": 7,
+            "A": 9,
+            "B": 11,
+        }
+
+        oitava = evento.oitava
+        acidente = evento.acidente
+        nome = evento.nome
+        nota = tabela_notas[nome]
+
+        if acidente == '#':
+            nota = nota + 1
+
+        if acidente == 'b':
+            nota = nota - 1
+
+        nota = nota + 12 * oitava
+
+        return nota
 
     def cria_arquivo_midi(self):
         self.mid = MidiFile(type = 1)
@@ -132,12 +132,20 @@ class GeradorMidi:
 
         for evento in voz.lista_elementos:
 
-            if type(evento) == modelos.Nota:
+            if isinstance(evento, modelos.Nota):
                 nota = self._cria_nota( evento)
                 volume = evento.volume
-                duracao = evento.duracao 
-                track.append(Message('note_on', note = nota , velocity = volume , time = 0, channel = canal))
-                track.append(Message('note_off', note = nota , velocity = volume , time = self._duracao_em_ticks(duracao), channel = canal))
+                duracao = evento.duracao
+                track.append(Message('note_on',
+                                note = nota ,
+                                velocity = volume ,
+                                time = 0,
+                                channel = canal))
+                track.append(Message('note_off',
+                                note = nota ,
+                                velocity = volume ,
+                                time = self._duracao_em_ticks(duracao),
+                                channel = canal))
 
             else:
                 tipo = evento.tipo
@@ -145,14 +153,25 @@ class GeradorMidi:
                 match tipo:
 
                     case "troca_instrumento":
-                        track.append(Message('program_change', program = valor, time = 0, channel = canal))
+                        track.append(Message('program_change',
+                                        program = valor,
+                                        time = 0,
+                                        channel = canal))
 
                     case "pausa":
-                        track.append(Message('note_off', note = 0, velocity = 0, time = self._duracao_em_ticks(valor), channel = canal))
+                        track.append(Message('note_off',
+                                        note = 0,
+                                        velocity = 0,
+                                        time = self._duracao_em_ticks(valor),
+                                        channel = canal))
 
                     case "atraso":
                         atraso_em_ticks = self._duracao_em_ticks(3) * valor
-                        track.append(Message('note_off', note = 0, velocity = 0, time = atraso_em_ticks, channel = canal))
-    
+                        track.append(Message('note_off',
+                                        note = 0,
+                                        velocity = 0,
+                                        time = atraso_em_ticks,
+                                        channel = canal))
+
     def salva_midi(self, nome):
         self.mid.save(nome)

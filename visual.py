@@ -1,11 +1,11 @@
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
+import pygame_gui
 import pygame
 import tradutor
 import audio
 import arquivos
-import pygame_gui
 
 gerenciador = arquivos.GerenciadorArquivos()
 toca = audio.ReprodutorAudio()
@@ -65,7 +65,10 @@ class Tela:
         self.largura_caixa = largura * 0.7
         self.altura_caixa = altura * 0.6
 
-        rect_caixa = pygame.Rect(self.margem_x, self.margem_y, self.largura_caixa, self.altura_caixa)
+        rect_caixa = pygame.Rect(self.margem_x,
+                                    self.margem_y,
+                                    self.largura_caixa,
+                                    self.altura_caixa)
         caixa_texto = pygame_gui.elements.UITextEntryBox(
             relative_rect = rect_caixa,
             initial_text = "Carregue um arquivo ou digite aqui...",
@@ -96,12 +99,11 @@ class Tela:
             screen.fill((235, 238, 240))
 
             botoes = self._cria_botoes(screen)
-            acao = self._mouse(screen, botoes)
+            acao = self._mouse( botoes)
 
             teclas = pygame.key.get_pressed()
             if teclas[pygame.K_ESCAPE]:
                 running = False
-            
             if acao == "Carregar":
                 caminho = gerenciador.escolher_caminho_abrir()
                 if caminho:
@@ -123,7 +125,7 @@ class Tela:
                     toca.despausar()
                     self.pausado = False
                 elif self._versao_preparada == self._versao_texto:
-                    toca.tocar(self._caminho_midi_temporario)
+                    toca.tocar()
                 elif self._texto_atual.strip():
                     self._tocar_ao_ficar_pronto = True
                     if self._prazo_preparacao is not None:
@@ -131,7 +133,6 @@ class Tela:
                     self.status = "Preparando áudio..."
                 else:
                     self.status = "Carregue um arquivo ou digite um texto."
-                
             if acao == "Pause" and not self.pausado and pygame.mixer.get_init() and pygame.mixer.music.get_busy():
                 toca.pausar()
                 self.pausado = True
@@ -151,7 +152,6 @@ class Tela:
             if acao == "SalvarTXT":
                 texto_atualizado = caixa_texto.get_text()
                 gerenciador.salvar_arquivo_txt(texto_atualizado)
-             
             gerenciador_gui.update(time_delta)
             gerenciador_gui.draw_ui(screen)
             if self.status:
@@ -160,8 +160,7 @@ class Tela:
                     texto_status,
                     (self.margem_x, self.margem_y + self.altura_caixa + 75)
                 )
-            pygame.display.update()   
-        
+            pygame.display.update()
         self._executor.shutdown(wait=True)
         if self._preparacao_futura:
             try:
@@ -225,7 +224,7 @@ class Tela:
                         self._versao_preparada = versao
                         self.status = "Áudio pronto."
                         if self._tocar_ao_ficar_pronto:
-                            toca.tocar(caminho)
+                            toca.tocar()
                             self._tocar_ao_ficar_pronto = False
 
         salvamentos_pendentes = []
@@ -267,7 +266,7 @@ class Tela:
             os.remove(self._caminho_midi_temporario)
         self._caminho_midi_temporario = None
 
-    def _mouse(self, screen, botoes):
+    def _mouse(self, botoes):
         clicou = pygame.mouse.get_pressed()[0]
         mpos = pygame.mouse.get_pos()
         saida = "ignorar"
@@ -278,7 +277,6 @@ class Tela:
             if m_collision and clicou and not self.clicado:
                 self.clicado = True
                 saida = texto
-               
             if  not clicou:
                 self.clicado = False
 
@@ -291,15 +289,34 @@ class Tela:
         ancora_x_dir = self.margem_x + self.largura_caixa
         ancora_y_base = self.margem_y + self.altura_caixa
 
-        botao_load = pygame.Rect(self.margem_x, self.margem_y - tamanho_botao - espacamento, tamanho_botao, tamanho_botao)
+        botao_load = pygame.Rect(self.margem_x,
+                                    self.margem_y - tamanho_botao - espacamento,
+                                    tamanho_botao,
+                                    tamanho_botao)
 
-        botao_play = pygame.Rect(self.margem_x, ancora_y_base + espacamento, tamanho_botao, tamanho_botao)
-        botao_pause = pygame.Rect(self.margem_x + tamanho_botao + espacamento, ancora_y_base + espacamento, tamanho_botao, tamanho_botao)
+        botao_play = pygame.Rect(self.margem_x,
+                                    ancora_y_base + espacamento,
+                                    tamanho_botao,
+                                    tamanho_botao)
+        botao_pause = pygame.Rect(self.margem_x + tamanho_botao + espacamento,
+                                    ancora_y_base + espacamento,
+                                    tamanho_botao,
+                                    tamanho_botao)
 
-        botao_savetxt = pygame.Rect(ancora_x_dir - tamanho_botao, ancora_y_base + espacamento, tamanho_botao, tamanho_botao)
-        botao_savemidi = pygame.Rect(ancora_x_dir - (tamanho_botao * 2) - espacamento, ancora_y_base + espacamento, tamanho_botao, tamanho_botao)
+        botao_savetxt = pygame.Rect(ancora_x_dir - tamanho_botao,
+                                        ancora_y_base + espacamento,
+                                        tamanho_botao,
+                                        tamanho_botao)
+        botao_savemidi = pygame.Rect(ancora_x_dir - (tamanho_botao * 2) - espacamento,
+                                        ancora_y_base + espacamento,
+                                        tamanho_botao,
+                                        tamanho_botao)
 
-        botoes = [(botao_play, "Play", self.img_play), (botao_pause, "Pause", self.img_pause), (botao_load, "Carregar", self.img_loadfile), (botao_savemidi, "Salvar", self.img_savemidi), (botao_savetxt, "SalvarTXT", self.img_savetxt)]
+        botoes = [(botao_play, "Play", self.img_play),
+                    (botao_pause, "Pause", self.img_pause),
+                    (botao_load, "Carregar", self.img_loadfile),
+                    (botao_savemidi, "Salvar", self.img_savemidi),
+                    (botao_savetxt, "SalvarTXT", self.img_savetxt)]
 
         for botao, _, imagem in botoes:
             if imagem:
@@ -319,7 +336,6 @@ class Tela:
                 return pygame.transform.scale(img, tamanho)
             except FileNotFoundError:
                 return None
-        
         self.img_play = carregar_seguro('assets/play.png')
         self.img_pause = carregar_seguro('assets/pause.png')
         self.img_loadfile = carregar_seguro('assets/file-import.png')
