@@ -120,6 +120,12 @@ class Tela:
                     pygame.mixer.music.stop()
                     self.status = "Carregando arquivo..."
 
+            if acao == "Stop":
+                toca.parar()
+                self.pausado = False
+                self._tocar_ao_ficar_pronto = False
+                self.status = "Áudio interrompido."
+
             if acao == "Play":
                 if self.pausado and self._versao_preparada == self._versao_texto:
                     toca.despausar()
@@ -285,34 +291,41 @@ class Tela:
     def _cria_botoes(self, screen):
         tamanho_botao = 50
         espacamento = 15
+        audio_tocando = (
+            not self.pausado
+            and pygame.mixer.get_init()
+            and pygame.mixer.music.get_busy()
+        )
 
         ancora_x_dir = self.margem_x + self.largura_caixa
         ancora_y_base = self.margem_y + self.altura_caixa
 
         botao_load = pygame.Rect(self.margem_x,
-                                    self.margem_y - tamanho_botao - espacamento,
-                                    tamanho_botao,
-                                    tamanho_botao)
+                                self.margem_y - tamanho_botao - espacamento,
+                                tamanho_botao,
+                                tamanho_botao)
 
         botao_play = pygame.Rect(self.margem_x,
-                                    ancora_y_base + espacamento,
-                                    tamanho_botao,
-                                    tamanho_botao)
+                                ancora_y_base + espacamento,
+                                tamanho_botao,
+                                tamanho_botao)
         botao_pause = pygame.Rect(self.margem_x + tamanho_botao + espacamento,
-                                    ancora_y_base + espacamento,
-                                    tamanho_botao,
-                                    tamanho_botao)
+                                ancora_y_base + espacamento,
+                                tamanho_botao,
+                                tamanho_botao)
 
         botao_savetxt = pygame.Rect(ancora_x_dir - tamanho_botao,
-                                        ancora_y_base + espacamento,
-                                        tamanho_botao,
-                                        tamanho_botao)
+                                    ancora_y_base + espacamento,
+                                    tamanho_botao,
+                                    tamanho_botao)
         botao_savemidi = pygame.Rect(ancora_x_dir - (tamanho_botao * 2) - espacamento,
-                                        ancora_y_base + espacamento,
-                                        tamanho_botao,
-                                        tamanho_botao)
+                                    ancora_y_base + espacamento,
+                                    tamanho_botao,
+                                    tamanho_botao)
 
-        botoes = [(botao_play, "Play", self.img_play),
+        botoes = [(botao_play,
+                    "Stop" if audio_tocando else "Play",
+                    self.img_stop if audio_tocando else self.img_play),
                     (botao_pause, "Pause", self.img_pause),
                     (botao_load, "Carregar", self.img_loadfile),
                     (botao_savemidi, "Salvar", self.img_savemidi),
@@ -336,6 +349,8 @@ class Tela:
                 return pygame.transform.scale(img, tamanho)
             except FileNotFoundError:
                 return None
+
+        self.img_stop = carregar_seguro('assets/stop.png')
         self.img_play = carregar_seguro('assets/play.png')
         self.img_pause = carregar_seguro('assets/pause.png')
         self.img_loadfile = carregar_seguro('assets/file-import.png')

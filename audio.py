@@ -10,6 +10,9 @@ class ReprodutorAudio:
     def tocar(self):
         pygame.mixer.music.play()
 
+    def parar(self):
+        pygame.mixer.music.stop()
+
     def pausar(self):
         pygame.mixer.music.pause()
 
