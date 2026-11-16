@@ -100,64 +100,12 @@ class Tela:
 
             botoes = self._cria_botoes(screen)
             acao = self._mouse( botoes)
-
+            
             teclas = pygame.key.get_pressed()
             if teclas[pygame.K_ESCAPE]:
                 running = False
-            if acao == "Carregar":
-                caminho = gerenciador.escolher_caminho_abrir()
-                if caminho:
-                    self._versao_texto += 1
-                    self._versao_preparada = -1
-                    self._prazo_preparacao = None
-                    self._texto_atual = ""
-                    self._versao_carregamento = self._versao_texto
-                    self._carregamento_futuro = self._executor.submit(
-                        gerenciador.ler_conteudo_txt, caminho
-                    )
-                    self._tocar_ao_ficar_pronto = False
-                    self.pausado = False
-                    pygame.mixer.music.stop()
-                    self.status = "Carregando arquivo..."
 
-            if acao == "Stop":
-                toca.parar()
-                self.pausado = False
-                self._tocar_ao_ficar_pronto = False
-                self.status = "Áudio interrompido."
-
-            if acao == "Play":
-                if self.pausado and self._versao_preparada == self._versao_texto:
-                    toca.despausar()
-                    self.pausado = False
-                elif self._versao_preparada == self._versao_texto:
-                    toca.tocar()
-                elif self._texto_atual.strip():
-                    self._tocar_ao_ficar_pronto = True
-                    if self._prazo_preparacao is not None:
-                        self._prazo_preparacao = pygame.time.get_ticks()
-                    self.status = "Preparando áudio..."
-                else:
-                    self.status = "Carregue um arquivo ou digite um texto."
-            if acao == "Pause" and not self.pausado and pygame.mixer.get_init() and pygame.mixer.music.get_busy():
-                toca.pausar()
-                self.pausado = True
-
-            if acao == "Salvar":
-                caminho_final = gerenciador.escolher_caminho_salvar()
-
-                if caminho_final:
-                    texto_atualizado = caixa_texto.get_text()
-                    self._salvamentos_futuros.append(
-                        self._executor.submit(
-                            _cria_midi, texto_atualizado, caminho_final
-                        )
-                    )
-                    self.status = "Salvando arquivo MIDI..."
-
-            if acao == "SalvarTXT":
-                texto_atualizado = caixa_texto.get_text()
-                gerenciador.salvar_arquivo_txt(texto_atualizado)
+            self._tratar_acao_botao(acao, caixa_texto)
             gerenciador_gui.update(time_delta)
             gerenciador_gui.draw_ui(screen)
             if self.status:
@@ -356,6 +304,76 @@ class Tela:
         self.img_loadfile = carregar_seguro('assets/file-import.png')
         self.img_savemidi = carregar_seguro('assets/save_midi.png')
         self.img_savetxt = carregar_seguro('assets/save_txt.png')
+
+
+
+    def _tratar_acao_botao(self, acao, caixa_texto):
+        if acao == "Carregar":
+            self._acao_carregar()
+        elif acao == "Play":
+            self._acao_tocar()
+        elif acao == "Salvar":
+            self._acao_salvar_midi(caixa_texto.get_text())
+        elif acao == "SalvarTXT":
+            self._acao_salvar_txt(caixa_texto.get_text())
+        elif acao == "Stop":
+            self._acao_stop(caixa_texto.get_text())
+        elif acao == "Pause" and not self.pausado and pygame.mixer.get_init() and pygame.mixer.music.get_busy():
+            toca.pausar()
+            self.pausado = True
+
+    def _acao_salvar_txt(self, caixa_texto):
+            texto_atualizado = caixa_texto
+            gerenciador.salvar_arquivo_txt(texto_atualizado)
+            
+
+    def _acao_stop(self, caixa_texto):
+        toca.parar()
+        self.pausado = False
+        self._tocar_ao_ficar_pronto = False
+        self.status = "Áudio interrompido."
+
+    def _acao_carregar(self):
+        caminho = gerenciador.escolher_caminho_abrir()
+        if caminho:
+            self._versao_texto += 1
+            self._versao_preparada = -1
+            self._prazo_preparacao = None
+            self._texto_atual = ""
+            self._versao_carregamento = self._versao_texto
+            self._carregamento_futuro = self._executor.submit(
+                gerenciador.ler_conteudo_txt, caminho
+            )
+            self._tocar_ao_ficar_pronto = False
+            self.pausado = False
+            pygame.mixer.music.stop()
+            self.status = "Carregando arquivo..."
+    def _acao_tocar(self):
+        if self.pausado and self._versao_preparada == self._versao_texto:
+            toca.despausar()
+            self.pausado = False
+        elif self._versao_preparada == self._versao_texto:
+            toca.tocar()
+        elif self._texto_atual.strip():
+            self._tocar_ao_ficar_pronto = True
+            if self._prazo_preparacao is not None:
+                self._prazo_preparacao = pygame.time.get_ticks()
+            self.status = "Preparando áudio..."
+        else:
+            self.status = "Carregue um arquivo ou digite um texto."
+
+    def _acao_salvar_midi(self, caixa_texto):
+        caminho_final = gerenciador.escolher_caminho_salvar()
+
+        if caminho_final:
+            texto_atualizado = caixa_texto
+            self._salvamentos_futuros.append(
+            self._executor.submit(
+                _cria_midi, texto_atualizado, caminho_final
+            )
+        )
+            self.status = "Salvando arquivo MIDI..."
+
 
 if __name__ == "__main__":
     tela = Tela()
