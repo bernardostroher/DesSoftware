@@ -11,10 +11,12 @@ gerenciador = arquivos.GerenciadorArquivos()
 toca = audio.ReprodutorAudio()
 
 def _cria_midi(texto, caminho):
+    """Cria um arquivo MIDI a partir do texto e salva no caminho especificado."""
     partitura = tradutor.Tradutor().analisar(texto)
     audio.GeradorMidi().cria_midi(partitura, caminho)
 
 def _cria_midi_temporario(texto, versao):
+    """Cria um arquivo MIDI temporário a partir do texto e retorna o caminho do arquivo."""
     arquivo = tempfile.NamedTemporaryFile(
         prefix=f"dessoftware_{versao}_",
         suffix=".mid",
@@ -32,7 +34,7 @@ def _cria_midi_temporario(texto, versao):
     return versao, caminho
 
 class Tela:
-
+    """Classe responsável pela interface gráfica da aplicação."""
     def __init__(self):
         self.clicado = False
         self.pausado = False
@@ -51,6 +53,7 @@ class Tela:
         self.status = ""
 
     def abrir_tela(self):
+        """Abre a interface gráfica da aplicação e inicia o loop principal."""
         pygame.init()
         tamanho_monitor = pygame.display.get_desktop_sizes()[0]
         screen = pygame.display.set_mode(tamanho_monitor, pygame.FULLSCREEN)
@@ -126,6 +129,7 @@ class Tela:
         pygame.quit()
 
     def _texto_alterado(self, texto):
+        """Atualiza o estado interno quando o texto de entrada é alterado."""
         self._texto_atual = texto
         self._versao_texto += 1
         self._versao_preparada = -1
@@ -136,12 +140,15 @@ class Tela:
         self.status = "Texto alterado; preparando áudio..."
 
     def _verificar_tarefas(self, caixa_texto):
+        """Verifica o status de tarefas assíncronas, 
+        como carregamento de arquivos e preparação de áudio."""
         self._confere_arquivo(caixa_texto)
         self._confere_audio()
         self._confere_salvamento()
 
-
     def _confere_arquivo(self, caixa_texto):
+        """Verifica se o carregamento de arquivo foi concluído
+        e atualiza o texto da caixa de entrada."""
         if self._carregamento_futuro and self._carregamento_futuro.done():
             futuro = self._carregamento_futuro
             self._carregamento_futuro = None
@@ -157,6 +164,7 @@ class Tela:
 
 
     def _confere_audio(self):
+        """Verifica se a preparação do áudio foi concluída e atualiza o estado do reprodutor."""
         if self._preparacao_futura and self._preparacao_futura.done():
             futuro = self._preparacao_futura
             self._preparacao_futura = None
@@ -190,6 +198,7 @@ class Tela:
 
 
     def _confere_salvamento(self):
+        """Verifica se os salvamentos de arquivos MIDI foram concluídos e atualiza o status."""
         salvamentos_pendentes = []
         for futuro in self._salvamentos_futuros:
             if not futuro.done():
@@ -204,6 +213,7 @@ class Tela:
         self._salvamentos_futuros = salvamentos_pendentes
 
     def _iniciar_preparacao_se_necessario(self):
+        """Inicia a preparação do áudio se o prazo de preparação tiver sido atingido."""
         if (
             self._prazo_preparacao is None
             or self._preparacao_futura is not None
@@ -223,6 +233,7 @@ class Tela:
         self._versao_em_preparacao = self._versao_texto
 
     def _limpar_midi_temporario(self):
+        """Remove o arquivo MIDI temporário, se existir."""
         if self._caminho_midi_temporario and os.path.exists(
             self._caminho_midi_temporario
         ):
@@ -230,6 +241,7 @@ class Tela:
         self._caminho_midi_temporario = None
 
     def _mouse(self, botoes):
+        """Verifica a interação do mouse com os botões e retorna a ação correspondente."""
         clicou = pygame.mouse.get_pressed()[0]
         mpos = pygame.mouse.get_pos()
         saida = "ignorar"
@@ -246,6 +258,8 @@ class Tela:
         return saida
 
     def _cria_botoes(self, screen):
+        """Cria os botões da interface gráfica e retorna uma 
+        lista de botões com suas ações correspondentes."""
         tamanho_botao = 50
         espacamento = 15
         audio_tocando = (
@@ -297,10 +311,14 @@ class Tela:
         return [(botao, texto) for botao, texto, _ in botoes]
 
     def _carregar_texturas(self):
+        """Carrega as imagens dos botões da interface gráfica, 
+        redimensionando-as para o tamanho adequado."""
 
         tamanho = (50, 50)
 
         def carregar_seguro(nome_arquivo):
+            """Carrega uma imagem e a redimensiona; 
+            retorna None se o arquivo não for encontrado."""
             try:
                 img = pygame.image.load(nome_arquivo).convert_alpha()
                 return pygame.transform.scale(img, tamanho)
@@ -317,6 +335,8 @@ class Tela:
 
 
     def _tratar_acao_botao(self, acao, caixa_texto):
+        """Trata a ação correspondente ao botão clicado, 
+        executando a função apropriada."""
         if acao == "Carregar":
             self._acao_carregar()
         elif acao == "Play":
@@ -335,16 +355,21 @@ class Tela:
             self.pausado = True
 
     def _acao_salvar_txt(self, caixa_texto):
+        """Salva o conteúdo da caixa de texto 
+        em um arquivo TXT escolhido pelo usuário."""
         texto_atualizado = caixa_texto
         gerenciador.salvar_arquivo_txt(texto_atualizado)
 
     def _acao_stop(self):
+        """Para a reprodução do áudio e atualiza o estado interno."""
         toca.parar()
         self.pausado = False
         self._tocar_ao_ficar_pronto = False
         self.status = "Áudio interrompido."
 
     def _acao_carregar(self):
+        """Abre um diálogo para o usuário escolher um arquivo TXT 
+        e carrega seu conteúdo na caixa de texto."""
         caminho = gerenciador.escolher_caminho_abrir()
         if caminho:
             self._versao_texto += 1
@@ -359,7 +384,9 @@ class Tela:
             self.pausado = False
             pygame.mixer.music.stop()
             self.status = "Carregando arquivo..."
+
     def _acao_tocar(self):
+        """Inicia ou retoma a reprodução do áudio, dependendo do estado atual."""
         if self.pausado and self._versao_preparada == self._versao_texto:
             toca.despausar()
             self.pausado = False
@@ -374,6 +401,8 @@ class Tela:
             self.status = "Carregue um arquivo ou digite um texto."
 
     def _acao_salvar_midi(self, caixa_texto):
+        """Abre um diálogo para o usuário escolher o 
+        local e nome do arquivo MIDI a ser salvo."""
         caminho_final = gerenciador.escolher_caminho_salvar()
 
         if caminho_final:
@@ -384,7 +413,6 @@ class Tela:
             )
         )
             self.status = "Salvando arquivo MIDI..."
-
 
 if __name__ == "__main__":
     tela = Tela()

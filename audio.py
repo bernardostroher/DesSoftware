@@ -1,25 +1,28 @@
+"""Módulo responsável por reproduzir áudio e gerar arquivos MIDI a partir de uma partitura estruturada."""
 import pygame
 from mido import MidiFile, MidiTrack, Message, MetaMessage, bpm2tempo
 import modelos
 
-
 class ReprodutorAudio:
-   
-
+    """Classe responsável por reproduzir arquivos de áudio."""
     def tocar(self):
+        """Inicia a reprodução do áudio."""
         pygame.mixer.music.play()
 
     def parar(self):
+        """Para a reprodução do áudio."""
         pygame.mixer.music.stop()
 
     def pausar(self):
+        """Pausa a reprodução do áudio."""
         pygame.mixer.music.pause()
 
     def despausar(self):
+        """Despausa a reprodução do áudio."""
         pygame.mixer.music.unpause()
 
 class GeradorMidi:
-
+    """Gera arquivos MIDI a partir de uma partitura estruturada."""
     DURACAO_EM_TICKS = {
         1: 1920,
         2: 960,
@@ -31,15 +34,18 @@ class GeradorMidi:
     }
 
     def _duracao_em_ticks(self, codigo):
+        """Converte o código de duração em ticks MIDI."""
         try:
             return self.DURACAO_EM_TICKS[codigo]
         except KeyError:
             raise ValueError(f"Código de duração inválido: {codigo}") from None
 
     def _coletar_eventos_bpm(self, partitura):
+        """Coleta os eventos de BPM da primeira voz da partitura."""
         voz_controle = partitura.vozes[0]
         if voz_controle is None:
-            raise ValueError("A primeira voz deve conter os eventos de controle, incluindo definição do BPM inicial.")
+            raise ValueError("""A primeira voz deve conter os eventos de controle,
+                                incluindo definição do BPM inicial.""")
 
         eventos_bpm = []
         tick = 0
@@ -77,7 +83,7 @@ class GeradorMidi:
         return eventos_bpm
 
     def _cria_track_bpm(self, eventos_bpm):
-
+        """Cria uma track MIDI para os eventos de BPM."""
         track = MidiTrack()
         self.mid.tracks.append(track)
 
@@ -88,6 +94,7 @@ class GeradorMidi:
             tick_anterior = tick
 
     def _cria_nota(self, evento):
+        """Converte um evento de nota em um número de nota MIDI."""
         tabela_notas = {
             "C": 0,
             "D": 2,
@@ -114,9 +121,11 @@ class GeradorMidi:
         return nota
 
     def cria_arquivo_midi(self):
+        """Cria um novo arquivo MIDI."""
         self.mid = MidiFile(type = 1)
 
     def cria_midi(self, texto_traduzido, nome):
+        """Cria um arquivo MIDI a partir de uma partitura estruturada."""
         self.cria_arquivo_midi()
 
         eventos_bpm = self._coletar_eventos_bpm(texto_traduzido)
@@ -129,6 +138,7 @@ class GeradorMidi:
         self.salva_midi(nome)
 
     def cria_track(self, voz, canal = 0):
+        """Cria uma track MIDI para uma voz específica."""
         track = MidiTrack()
         self.mid.tracks.append(track)
 
@@ -176,4 +186,5 @@ class GeradorMidi:
                                         channel = canal))
 
     def salva_midi(self, nome):
+        """Salva o arquivo MIDI com o nome especificado."""
         self.mid.save(nome)
