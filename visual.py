@@ -100,7 +100,6 @@ class Tela:
 
             botoes = self._cria_botoes(screen)
             acao = self._mouse( botoes)
-            
             teclas = pygame.key.get_pressed()
             if teclas[pygame.K_ESCAPE]:
                 running = False
@@ -137,6 +136,12 @@ class Tela:
         self.status = "Texto alterado; preparando áudio..."
 
     def _verificar_tarefas(self, caixa_texto):
+        self._confere_arquivo(caixa_texto)
+        self._confere_audio()
+        self._confere_salvamento()
+
+
+    def _confere_arquivo(self, caixa_texto):
         if self._carregamento_futuro and self._carregamento_futuro.done():
             futuro = self._carregamento_futuro
             self._carregamento_futuro = None
@@ -150,6 +155,8 @@ class Tela:
                     caixa_texto.set_text(documento)
                     self._texto_alterado(documento)
 
+
+    def _confere_audio(self):
         if self._preparacao_futura and self._preparacao_futura.done():
             futuro = self._preparacao_futura
             self._preparacao_futura = None
@@ -181,6 +188,8 @@ class Tela:
                             toca.tocar()
                             self._tocar_ao_ficar_pronto = False
 
+
+    def _confere_salvamento(self):
         salvamentos_pendentes = []
         for futuro in self._salvamentos_futuros:
             if not futuro.done():
@@ -317,17 +326,19 @@ class Tela:
         elif acao == "SalvarTXT":
             self._acao_salvar_txt(caixa_texto.get_text())
         elif acao == "Stop":
-            self._acao_stop(caixa_texto.get_text())
-        elif acao == "Pause" and not self.pausado and pygame.mixer.get_init() and pygame.mixer.music.get_busy():
+            self._acao_stop()
+        elif (acao == "Pause"
+                and not self.pausado
+                and pygame.mixer.get_init()
+                and pygame.mixer.music.get_busy()):
             toca.pausar()
             self.pausado = True
 
     def _acao_salvar_txt(self, caixa_texto):
-            texto_atualizado = caixa_texto
-            gerenciador.salvar_arquivo_txt(texto_atualizado)
-            
+        texto_atualizado = caixa_texto
+        gerenciador.salvar_arquivo_txt(texto_atualizado)
 
-    def _acao_stop(self, caixa_texto):
+    def _acao_stop(self):
         toca.parar()
         self.pausado = False
         self._tocar_ao_ficar_pronto = False

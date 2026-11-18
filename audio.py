@@ -4,8 +4,7 @@ import modelos
 
 
 class ReprodutorAudio:
-    def __init__(self):
-        pass
+   
 
     def tocar(self):
         pygame.mixer.music.play()
