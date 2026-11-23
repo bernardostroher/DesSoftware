@@ -21,6 +21,20 @@ class ReprodutorAudio:
         """Despausa a reprodução do áudio."""
         pygame.mixer.music.unpause()
 
+    def carregar(self, caminho):
+        """Carrega um arquivo de áudio para reprodução."""
+        pygame.mixer.music.load(caminho)
+
+    def esta_tocando(self):
+        """Indica se há áudio sendo reproduzido."""
+        return bool(pygame.mixer.get_init() and pygame.mixer.music.get_busy())
+
+    def descarregar(self):
+        """Libera o arquivo carregado (necessário para apagá-lo no Windows)."""
+        if pygame.mixer.get_init():
+            pygame.mixer.music.unload()
+
+
 class GeradorMidi:
     """Gera arquivos MIDI a partir de uma partitura estruturada."""
     DURACAO_EM_TICKS = {
@@ -33,6 +47,9 @@ class GeradorMidi:
         7: 30,
     }
 
+    def __init__(self):
+        self.mid = None
+        
     def _duracao_em_ticks(self, codigo):
         """Converte o código de duração em ticks MIDI."""
         try:

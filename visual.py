@@ -1,3 +1,5 @@
+"""Módulo responsável pela interface gráfica da aplicação, 
+incluindo a criação da tela, botões e interação com o usuário."""
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -7,34 +9,42 @@ import tradutor
 import audio
 import arquivos
 
+ARQUIVOS_ICONES = {
+    "stop": "stop.png", "play": "play.png", "pause": "pause.png",
+    "carregar": "file-import.png", "salvar_midi": "save_midi.png",
+    "salvar_txt": "save_txt.png",
+    }
+
 gerenciador = arquivos.GerenciadorArquivos()
 toca = audio.ReprodutorAudio()
 
 def _cria_midi(texto, caminho):
     """Cria um arquivo MIDI a partir do texto e salva no caminho especificado."""
-    partitura = tradutor.Tradutor().analisar(texto)
-    audio.GeradorMidi().cria_midi(partitura, caminho)
+    try:
+        partitura = tradutor.Tradutor().analisar(texto)
+        audio.GeradorMidi().cria_midi(partitura, caminho)
+    except Exception as erro:
+        raise ErroGeracaoMidi(str(erro)) from erro
 
 def _cria_midi_temporario(texto, versao):
     """Cria um arquivo MIDI temporário a partir do texto e retorna o caminho do arquivo."""
-    arquivo = tempfile.NamedTemporaryFile(
+    with tempfile.NamedTemporaryFile(
         prefix=f"dessoftware_{versao}_",
         suffix=".mid",
         delete=False
-    )
-    caminho = arquivo.name
-    arquivo.close()
+    ) as arquivo:
+        caminho = arquivo.name
 
     try:
         _cria_midi(texto, caminho)
     except Exception:
         os.remove(caminho)
         raise
-
     return versao, caminho
 
 class Tela:
     """Classe responsável pela interface gráfica da aplicação."""
+
     def __init__(self):
         self.clicado = False
         self.pausado = False
@@ -51,6 +61,7 @@ class Tela:
         self._tocar_ao_ficar_pronto = False
         self._caminho_midi_temporario = None
         self.status = ""
+        self.icones = {}
 
     def abrir_tela(self):
         """Abre a interface gráfica da aplicação e inicia o loop principal."""
@@ -121,7 +132,7 @@ class Tela:
         if self._preparacao_futura:
             try:
                 _, caminho = self._preparacao_futura.result()
-            except Exception as erro:
+            except ErroGeracaoMidi as erro:
                 print(f"Erro ao preparar áudio: {erro}")
             else:
                 os.remove(caminho)
@@ -170,7 +181,7 @@ class Tela:
             self._preparacao_futura = None
             try:
                 versao, caminho = futuro.result()
-            except Exception as erro:
+            except ErroGeracaoMidi as erro:
                 if self._versao_em_preparacao == self._versao_texto:
                     self._tocar_ao_ficar_pronto = False
                     self.status = f"Erro ao preparar áudio: {erro}"
@@ -206,7 +217,7 @@ class Tela:
                 continue
             try:
                 futuro.result()
-            except Exception as erro:
+            except ErroGeracaoMidi as erro:
                 self.status = f"Erro ao salvar MIDI: {erro}"
             else:
                 self.status = "Arquivo MIDI salvo."
@@ -325,14 +336,17 @@ class Tela:
             except FileNotFoundError:
                 return None
 
-        self.img_stop = carregar_seguro('assets/stop.png')
-        self.img_play = carregar_seguro('assets/play.png')
-        self.img_pause = carregar_seguro('assets/pause.png')
-        self.img_loadfile = carregar_seguro('assets/file-import.png')
-        self.img_savemidi = carregar_seguro('assets/save_midi.png')
-        self.img_savetxt = carregar_seguro('assets/save_txt.png')
+        icones = {
+            nome: carregar_seguro(f"assets/{arquivo}")
+            for nome, arquivo in ARQUIVOS_ICONES.items()
+            }
 
-
+        self.img_stop = icones["stop"]
+        self.img_play = icones["play"]
+        self.img_pause = icones["pause"]
+        self.img_loadfile = icones["carregar"]
+        self.img_savemidi = icones["salvar_midi"]
+        self.img_savetxt = icones["salvar_txt"]
 
     def _tratar_acao_botao(self, acao, caixa_texto):
         """Trata a ação correspondente ao botão clicado, 
@@ -414,6 +428,5 @@ class Tela:
         )
             self.status = "Salvando arquivo MIDI..."
 
-if __name__ == "__main__":
-    tela = Tela()
-    tela.abrir_tela()
+class ErroGeracaoMidi(Exception):
+    """Erro ao gerar o arquivo MIDI a partir do texto."""
